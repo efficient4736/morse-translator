@@ -59,6 +59,3 @@ SOS A
    ```bash
    ./morse_translator
    ```
-
-## Lizenz
-Dieses Projekt ist unter der [MIT-Lizenz](LICENSE) lizenziert.
