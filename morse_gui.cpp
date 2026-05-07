@@ -4,6 +4,9 @@
 #include <cctype>
 #include <vector>
 
+// Enable visual styles for a more modern look (themed buttons, etc.)
+#pragma comment(linker,"\"/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+
 // Control IDs
 #define ID_INPUT_EDIT       101
 #define ID_OUTPUT_EDIT      102
@@ -18,7 +21,7 @@
 HWND hInput, hOutput;
 HWND hBtnConvert, hBtnClearInput, hBtnClearOutput;
 HWND hRadioT2M, hRadioM2T;
-HFONT hFont;
+HFONT hFontLabel, hFontEdit;
 
 // Morse code map (same as console version)
 std::map<char, std::string> morse = {
@@ -103,69 +106,84 @@ std::string MorseToText(const std::string& morse_input) {
     return result;
 }
 
+// Helper: Filter input for Morse mode (only . - space / allowed)
+std::string FilterMorseInput(const std::string& input) {
+    std::string filtered;
+    for (char c : input) {
+        if (c == '.' || c == '-' || c == ' ' || c == '/') {
+            filtered += c;
+        }
+    }
+    return filtered;
+}
+
 // Window procedure
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
         case WM_CREATE: {
-            // Create font
-            hFont = CreateFont(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
-                               DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                               DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Consolas");
+            // Create fonts - Segoe UI for modern look on labels/buttons, Consolas for code
+            hFontLabel = CreateFont(15, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+                                   DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                                   CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Segoe UI");
+            
+            hFontEdit = CreateFont(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+                                    DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                                    CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Consolas");
             
             // Mode label
             CreateWindow("STATIC", "Mode:", WS_VISIBLE | WS_CHILD,
-                         20, 20, 50, 20, hwnd, (HMENU)ID_STATIC_MODE, NULL, NULL);
+                         20, 15, 50, 22, hwnd, (HMENU)ID_STATIC_MODE, NULL, NULL);
             
-            // Radio buttons for mode
-            hRadioT2M = CreateWindow("BUTTON", "Text → Morse", 
+            // Radio buttons for mode (wide strings for proper Unicode arrow)
+            hRadioT2M = CreateWindowW(L"BUTTON", L"Text → Morse", 
                 WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON | WS_GROUP,
-                80, 18, 140, 25, hwnd, (HMENU)ID_RADIO_T2M, NULL, NULL);
+                80, 13, 145, 26, hwnd, (HMENU)ID_RADIO_T2M, NULL, NULL);
             
-            hRadioM2T = CreateWindow("BUTTON", "Morse → Text", 
+            hRadioM2T = CreateWindowW(L"BUTTON", L"Morse → Text", 
                 WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON,
-                230, 18, 140, 25, hwnd, (HMENU)ID_RADIO_M2T, NULL, NULL);
+                235, 13, 145, 26, hwnd, (HMENU)ID_RADIO_M2T, NULL, NULL);
             
             // Default to Text to Morse
             SendMessage(hRadioT2M, BM_SETCHECK, BST_CHECKED, 0);
             
             // Input label
             CreateWindow("STATIC", "Input:", WS_VISIBLE | WS_CHILD,
-                         20, 55, 60, 20, hwnd, NULL, NULL, NULL);
+                         20, 50, 60, 20, hwnd, NULL, NULL, NULL);
             
             // Input edit (multiline)
             hInput = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", 
                 WS_VISIBLE | WS_CHILD | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL | ES_WANTRETURN,
-                20, 75, 560, 150, hwnd, (HMENU)ID_INPUT_EDIT, NULL, NULL);
-            SendMessage(hInput, WM_SETFONT, (WPARAM)hFont, TRUE);
+                20, 70, 560, 160, hwnd, (HMENU)ID_INPUT_EDIT, NULL, NULL);
+            SendMessage(hInput, WM_SETFONT, (WPARAM)hFontEdit, TRUE);
             
             // Output label
             CreateWindow("STATIC", "Output:", WS_VISIBLE | WS_CHILD,
-                         20, 235, 60, 20, hwnd, NULL, NULL, NULL);
+                         20, 240, 60, 20, hwnd, NULL, NULL, NULL);
             
             // Output edit (multiline, read-only)
             hOutput = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", 
                 WS_VISIBLE | WS_CHILD | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL | ES_READONLY,
-                20, 255, 560, 150, hwnd, (HMENU)ID_OUTPUT_EDIT, NULL, NULL);
-            SendMessage(hOutput, WM_SETFONT, (WPARAM)hFont, TRUE);
+                20, 260, 560, 160, hwnd, (HMENU)ID_OUTPUT_EDIT, NULL, NULL);
+            SendMessage(hOutput, WM_SETFONT, (WPARAM)hFontEdit, TRUE);
             
-            // Buttons
+            // Buttons - slightly larger and better spaced
             hBtnConvert = CreateWindow("BUTTON", "Convert", 
                 WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-                20, 420, 120, 35, hwnd, (HMENU)ID_BTN_CONVERT, NULL, NULL);
+                20, 435, 130, 38, hwnd, (HMENU)ID_BTN_CONVERT, NULL, NULL);
             
             hBtnClearInput = CreateWindow("BUTTON", "Clear Input", 
                 WS_VISIBLE | WS_CHILD,
-                160, 420, 120, 35, hwnd, (HMENU)ID_BTN_CLEAR_INPUT, NULL, NULL);
+                165, 435, 130, 38, hwnd, (HMENU)ID_BTN_CLEAR_INPUT, NULL, NULL);
             
             hBtnClearOutput = CreateWindow("BUTTON", "Clear Output", 
                 WS_VISIBLE | WS_CHILD,
-                300, 420, 120, 35, hwnd, (HMENU)ID_BTN_CLEAR_OUTPUT, NULL, NULL);
+                310, 435, 130, 38, hwnd, (HMENU)ID_BTN_CLEAR_OUTPUT, NULL, NULL);
             
-            // Instructions / hint at bottom
+            // Instructions / hint at bottom (updated for Morse restrictions)
             CreateWindow("STATIC", 
-                "Instructions: Enter text or Morse code. Use spaces between letters, / between words in Morse mode.",
+                "Instructions: In Morse mode only . - space and / are allowed. Use spaces between letters, / between words.",
                 WS_VISIBLE | WS_CHILD | SS_CENTER,
-                20, 470, 560, 40, hwnd, NULL, NULL, NULL);
+                20, 485, 560, 35, hwnd, NULL, NULL, NULL);
             
             return 0;
         }
@@ -183,11 +201,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 // Determine mode
                 bool isTextToMorse = (SendMessage(hRadioT2M, BM_GETCHECK, 0, 0) == BST_CHECKED);
                 
+                std::string processedInput = input;
+                if (!isTextToMorse) {
+                    // Morse mode: filter to only valid characters . - space /
+                    processedInput = FilterMorseInput(input);
+                    if (processedInput != input && !input.empty()) {
+                        // Optionally show that invalid chars were removed (simple approach: just use filtered)
+                    }
+                }
+                
                 std::string output;
                 if (isTextToMorse) {
-                    output = TextToMorse(input);
+                    output = TextToMorse(processedInput);
                 } else {
-                    output = MorseToText(input);
+                    output = MorseToText(processedInput);
                 }
                 
                 // Set output
@@ -204,7 +231,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         }
         
         case WM_DESTROY: {
-            if (hFont) DeleteObject(hFont);
+            if (hFontLabel) DeleteObject(hFontLabel);
+            if (hFontEdit) DeleteObject(hFontEdit);
             PostQuitMessage(0);
             return 0;
         }
@@ -220,22 +248,23 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     InitMorseMaps();
     
-    const char* CLASS_NAME = "MorseTranslatorGUI";
+    const wchar_t* CLASS_NAME = L"MorseTranslatorGUI";
     
-    WNDCLASS wc = {};
+    WNDCLASSW wc = {};
     wc.lpfnWndProc = WndProc;
     wc.hInstance = hInstance;
     wc.lpszClassName = CLASS_NAME;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wc.style = CS_HREDRAW | CS_VREDRAW;
+    wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);  // Default icon (can be replaced with custom .ico)
     
-    RegisterClass(&wc);
+    RegisterClassW(&wc);
     
-    HWND hwnd = CreateWindowEx(
-        0, CLASS_NAME, "Morse Translator - GUI Version (Win32)",
-        WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME & ~WS_MAXIMIZEBOX,  // Fixed size window
-        CW_USEDEFAULT, CW_USEDEFAULT, 620, 530,
+    HWND hwnd = CreateWindowExW(
+        0, CLASS_NAME, L"Morse Translator",
+        WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME & ~WS_MAXIMIZEBOX,
+        CW_USEDEFAULT, CW_USEDEFAULT, 620, 540,
         NULL, NULL, hInstance, NULL
     );
     
