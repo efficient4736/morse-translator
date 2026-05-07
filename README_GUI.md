@@ -1,19 +1,15 @@
-# Morse Translator - GUI Version
+# Morse Translator GUI - Modernized
 
-Lightweight native Win32 GUI with visual styles for a cleaner look.
+Resizable window, dynamic layout, Unicode, Morse input filter, visual styles.
 
-## Changes in latest update
-- Added explicit InitCommonControlsEx for better visual styles support
-- Increased window height to prevent text cutoff
-- Shortened bottom instruction text to fit
-- Unicode support for arrows (→)
-- Morse mode input filtering (only . - space /)
-- Clean title "Morse Translator"
-- Better fonts and layout
+## New in this version
+- Resizable window with automatic control repositioning
+- Proper wide-string Unicode (correct arrows and title)
+- InitCommonControlsEx + manifest for visual styles
+- Darker / cleaner look possible with system themes
+- Fullscreen support can be added easily (F11 toggle)
 
-## Compile
-```cmd
-g++ -mwindows -Os -s morse_gui.cpp -o MorseTranslatorGUI.exe
-```
+## Compile (add -municode for best Unicode support)
+g++ -mwindows -municode -Os -s morse_gui.cpp -o MorseTranslatorGUI.exe
 
-Run the .exe directly. The GUI now has themed controls (if visual styles are active on your system) and proper Unicode text.
+Run and enjoy the improved modern-feeling native GUI.
